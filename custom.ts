@@ -1,8 +1,14 @@
 //% color=#0fbc11 icon="\uf2c2" block="HMC5883L"
 namespace HMC5883L {
-    let gain = 0.92;  // Default gain for 1.3 Gauss
-    let declinationRadians = 0; // Declination angle in radians
     const address = 0x1E;  // I2C address of HMC5883L
+
+    // Constants for configuration
+    const GAIN = "1.3";  // Constant gain for 1.3 Gauss
+    const DECLINATION_DEGREES = 0; // Constant declination in degrees
+    const DECLINATION_MINUTES = 0; // Constant declination in minutes
+
+    let gain = 0.92;  // Default gain value for 1.3 Gauss
+    let declinationRadians = 0; // Declination angle in radians
 
     const GAIN_MAP: { [key: string]: [number, number] } = {
         "0.88": [0 << 5, 0.73],
@@ -15,14 +21,14 @@ namespace HMC5883L {
         "8.1": [7 << 5, 4.35]
     };
 
-    //% block="initialize HMC5883L with gauss %gauss declination %degrees degrees %minutes minutes"
-    export function initialize(gauss: string = "1.3", degrees: number = 0, minutes: number = 0): void {
-        if (GAIN_MAP[gauss]) {
-            const [regValue, gainValue] = GAIN_MAP[gauss];
+    //% block="initialize HMC5883L sensor"
+    export function initialize(): void {
+        if (GAIN_MAP[GAIN]) {
+            const [regValue, gainValue] = GAIN_MAP[GAIN];
             gain = gainValue;
             pins.i2cWriteNumber(address, (0x01 << 8) | regValue, NumberFormat.UInt16BE);
         }
-        declinationRadians = ((degrees + minutes / 60) * Math.PI) / 180;
+        declinationRadians = ((DECLINATION_DEGREES + DECLINATION_MINUTES / 60) * Math.PI) / 180;
 
         // Configuration register A: 0b01110000 -> 8 samples, 15Hz output, normal mode
         pins.i2cWriteNumber(address, (0x00 << 8) | 0b01110000, NumberFormat.UInt16BE);
@@ -64,7 +70,13 @@ namespace HMC5883L {
     //% block="formatted result"
     export function formatResult(): string {
         const [x, y, z] = read();
-        const degrees = heading(x, y);
-        return `X: ${x.toFixed(2)}, Y: ${y.toFixed(2)}, Z: ${z.toFixed(2)}, Heading: ${degrees}°`;
+        const degrees = heading(x, y); // Calculate heading from x and y
+
+        // Simulate toFixed(2) by rounding to two decimal places
+        const xFormatted = Math.round(x * 100) / 100;
+        const yFormatted = Math.round(y * 100) / 100;
+        const zFormatted = Math.round(z * 100) / 100;
+
+        return `X: ${xFormatted}, Y: ${yFormatted}, Z: ${zFormatted}, Heading: ${degrees}°`;
     }
 }
